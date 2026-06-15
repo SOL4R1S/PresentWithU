@@ -30,7 +30,7 @@ fun MainScreen(
     var showSongDialog by remember { mutableStateOf(false) }
     var editingSong by remember { mutableStateOf<Song?>(null) }
     var showBibleDialog by remember { mutableStateOf(false) }
-    var bibleReference by remember { mutableStateOf(BibleReference()) }
+    var bibleVerses by remember { mutableStateOf(repository.getAllBibleVerses()) }
     var selectedTab by remember { mutableStateOf(0) }
     var showPresentationDialog by remember { mutableStateOf(false) }
 
@@ -38,6 +38,7 @@ fun MainScreen(
     fun refreshSongs() {
         songs = repository.getAllSongs()
         presentations = repository.getAllPresentations()
+        bibleVerses = repository.getAllBibleVerses()
     }
 
     Surface(
@@ -289,24 +290,31 @@ fun MainScreen(
         )
     }
 
-    // Bible Dialog
+    // Bible Library (user-created verses)
     if (showBibleDialog) {
-        BibleDialog(
+        BibleLibraryDialog(
+            savedVerses = bibleVerses,
             onDismiss = { showBibleDialog = false },
-            onSelect = { ref ->
-                bibleReference = ref
-                if (ref.text.isNotBlank()) {
+            onAddToSlides = { verse ->
+                if (verse.text.isNotBlank()) {
                     slides = slides + Slide(
                         type = SlideType.SCRIPTURE,
-                        content = ref.text,
-                        note = "${ref.book} ${ref.chapter}:${ref.verseStart}${if (ref.verseEnd != null && ref.verseEnd != ref.verseStart) "-${ref.verseEnd}" else ""} (${ref.translation})",
+                        content = verse.text,
+                        note = verse.label,
                         order = slides.size
                     )
                     currentSlideIndex = slides.size - 1
                 }
                 showBibleDialog = false
             },
-            repository = repository
+            onSave = { verse ->
+                repository.saveBibleVerse(verse)
+                refreshSongs()
+            },
+            onDelete = { id ->
+                repository.deleteBibleVerse(id)
+                refreshSongs()
+            }
         )
     }
 
@@ -346,152 +354,301 @@ fun MainScreen(
 }
 
 @Composable
-fun BibleDialog(
+fun BibleLibraryDialog(
+    savedVerses: List<BibleVerse>,
     onDismiss: () -> Unit,
-    onSelect: (BibleReference) -> Unit,
-    repository: SongRepository
+    onAddToSlides: (BibleVerse) -> Unit,
+    onSave: (BibleVerse) -> Unit,
+    onDelete: (String) -> Unit
 ) {
-    var book by remember { mutableStateOf("John") }
-    var chapter by remember { mutableStateOf("3") }
-    var verseStart by remember { mutableStateOf("16") }
-    var verseEnd by remember { mutableStateOf("") }
-    var translation by remember { mutableStateOf("NIV") }
-    var result by remember { mutableStateOf("") }
-
-    val books = listOf("John", "Psalm", "Genesis", "Matthew", "Romans", "Philippians", "Ephesians", "Isaiah", "Jeremiah", "Proverbs", "Hebrews")
+    var tab by remember { mutableStateOf(0) } // 0 = Saved, 1 = Add New
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(16.dp),
         containerColor = MaterialTheme.colorScheme.surface,
-        title = { Text("Bible Lookup") },
+        title = { Text("Bible Verse Library") },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                // Book selector
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it }
+            Column(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
+                // Tab row
+                TabRow(
+                    selectedTabIndex = tab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
                 ) {
-                    OutlinedTextField(
-                        value = book,
-                        onValueChange = { book = it },
-                        label = { Text("Book") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        books.forEach { b ->
-                            DropdownMenuItem(
-                                text = { Text(b) },
-                                onClick = { book = b; expanded = false }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = chapter,
-                        onValueChange = { chapter = it },
-                        label = { Text("Chapter") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    OutlinedTextField(
-                        value = verseStart,
-                        onValueChange = { verseStart = it },
-                        label = { Text("Verse") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    OutlinedTextField(
-                        value = verseEnd,
-                        onValueChange = { verseEnd = it },
-                        label = { Text("To") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
-                    )
+                    Tab(selected = tab == 0, onClick = { tab = 0 },
+                        text = { Text("Saved Verses (${savedVerses.size})", style = MaterialTheme.typography.labelMedium) })
+                    Tab(selected = tab == 1, onClick = { tab = 1 },
+                        text = { Text("Add New", style = MaterialTheme.typography.labelMedium) })
                 }
 
                 Spacer(Modifier.height(12.dp))
 
-                // Lookup button
-                Button(
-                    onClick = {
-                        val ref = BibleReference(
-                            book = book,
-                            chapter = chapter.toIntOrNull() ?: 1,
-                            verseStart = verseStart.toIntOrNull() ?: 1,
-                            verseEnd = verseEnd.toIntOrNull(),
-                            translation = translation
-                        )
-                        val lookupResult = repository.getBibleVerse(ref)
-                        result = lookupResult.text
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Search, "Lookup", modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Lookup")
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Result
-                if (result.isNotBlank()) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                "$book $chapter:${verseStart}${if (verseEnd.isNotBlank()) "-$verseEnd" else ""} ($translation)",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                result,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
+                when (tab) {
+                    0 -> SavedVersesTab(
+                        verses = savedVerses,
+                        onAddToSlides = onAddToSlides,
+                        onDelete = onDelete
+                    )
+                    1 -> AddBibleVerseTab(onSave = onSave)
                 }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val ref = BibleReference(
-                        book = book,
-                        chapter = chapter.toIntOrNull() ?: 1,
-                        verseStart = verseStart.toIntOrNull() ?: 1,
-                        verseEnd = verseEnd.toIntOrNull(),
-                        translation = translation,
-                        text = result
-                    )
-                    onSelect(ref)
-                },
-                enabled = result.isNotBlank(),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Add to Presentation")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
+}
+
+@Composable
+private fun SavedVersesTab(
+    verses: List<BibleVerse>,
+    onAddToSlides: (BibleVerse) -> Unit,
+    onDelete: (String) -> Unit
+) {
+    if (verses.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    Icons.Default.MenuBook,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "No saved verses yet.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Switch to 'Add New' tab to type your own verses.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+        }
+        return
+    }
+
+    var searchQuery by remember { mutableStateOf("") }
+
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = { searchQuery = it },
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("Search verses...") },
+        leadingIcon = { Icon(Icons.Default.Search, "Search", modifier = Modifier.size(16.dp)) },
+        singleLine = true,
+        shape = RoundedCornerShape(8.dp)
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    val filtered = if (searchQuery.isBlank()) verses
+    else verses.filter {
+        it.label.contains(searchQuery, ignoreCase = true) ||
+        it.text.contains(searchQuery, ignoreCase = true) ||
+        it.category.contains(searchQuery, ignoreCase = true)
+    }
+
+    LazyColumn(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        items(filtered) { verse ->
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.MenuBook,
+                                null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                verse.label,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Row {
+                            if (verse.category.isNotBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                                ) {
+                                    Text(
+                                        verse.category,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            IconButton(onClick = { onDelete(verse.id) }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Delete, "Delete", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        verse.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (verse.translation.isNotBlank()) {
+                        Text(
+                            verse.translation,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Button(
+                        onClick = { onAddToSlides(verse) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(6.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Default.Add, "Add to presentation", modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Add to Presentation", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddBibleVerseTab(
+    onSave: (BibleVerse) -> Unit
+) {
+    var label by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
+    var translation by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            "Type a Bible verse yourself to add to your personal library.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Label (e.g. "John 3:16")
+        OutlinedTextField(
+            value = label,
+            onValueChange = { label = it },
+            label = { Text("Reference (e.g. John 3:16)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        // Translation
+        OutlinedTextField(
+            value = translation,
+            onValueChange = { translation = it },
+            label = { Text("Translation (e.g. NIV, ESV, KJV)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        // Category
+        OutlinedTextField(
+            value = category,
+            onValueChange = { category = it },
+            label = { Text("Category (e.g. Gospel, Worship, Comfort)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        // Verse text
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text("Verse Text") },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        // Preview
+        if (label.isNotBlank() && text.isNotBlank()) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (translation.isNotBlank()) {
+                        Text(
+                            translation,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // Save button
+        Button(
+            onClick = {
+                val verse = BibleVerse(
+                    label = label,
+                    translation = translation,
+                    text = text,
+                    category = category
+                )
+                onSave(verse)
+                // Reset form
+                label = ""
+                text = ""
+                translation = ""
+                category = ""
+            },
+            enabled = label.isNotBlank() && text.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Icon(Icons.Default.Save, "Save verse", modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Save to Library")
+        }
+    }
 }
 
 @Composable

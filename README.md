@@ -10,7 +10,7 @@ A clean, modern alternative to ProPresenter for churches. Built with Kotlin and 
 |---------|-------------|
 | 📝 **Slide Editor** | Create and edit slides — lyrics, scriptures, announcements, titles |
 | 🎵 **Song Library** | Store songs with verses (V1, V2, Chorus, Bridge) for quick access |
-| 📖 **Bible Lookup** | Built-in scripture browser with multiple translations (NIV) |
+| 📖 **Bible Verse Library** | User-created personal Bible verse library (no copyrighted text included) |
 | 🖥️ **Presenter View** | Full presenter interface with audience preview + navigation |
 | 👁️ **Stage Display** | Confidence monitor for stage talent with next-slide preview |
 | 🎨 **Dark Theme** | Low-light friendly design optimized for church AV environments |

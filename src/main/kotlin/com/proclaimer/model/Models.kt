@@ -51,14 +51,18 @@ data class Presentation(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * A user-created Bible verse entry.
+ * Users manually type verse text to avoid copyrighted translation data.
+ */
 @Serializable
-data class BibleReference(
-    val book: String = "",
-    val chapter: Int = 1,
-    val verseStart: Int = 1,
-    val verseEnd: Int? = null,
-    val translation: String = "NIV",
-    val text: String = ""
+data class BibleVerse(
+    val id: String = generateId(),
+    val label: String = "",          // User's custom label (e.g., "John 3:16")
+    val translation: String = "",    // Which translation (user types this too)
+    val text: String = "",
+    val category: String = "",       // e.g. "Gospel", "Worship", "Comfort"
+    val createdAt: Long = System.currentTimeMillis()
 )
 
 @Serializable
