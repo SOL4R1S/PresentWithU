@@ -7,10 +7,12 @@ import com.proclaimer.model.Slide
 import com.proclaimer.ui.screens.MainScreen
 import com.proclaimer.ui.screens.PresenterScreen
 import com.proclaimer.ui.screens.StageDisplayScreen
+import com.proclaimer.ui.state.MainStateHolder
+import com.proclaimer.ui.state.WindowStateHolder
+import com.proclaimer.ui.window.PresentationWindows
 import com.proclaimer.ui.theme.ProclaimerTheme
 import java.io.File
 import androidx.compose.runtime.rememberCoroutineScope
-import com.proclaimer.ui.state.MainStateHolder
 
 @Composable
 fun App() {
@@ -18,6 +20,7 @@ fun App() {
     val repository = remember { SongRepository(dataDir) }
     val scope = rememberCoroutineScope()
     val stateHolder = remember { MainStateHolder(repository, scope) }
+    val windowStateHolder = remember { WindowStateHolder(dataDir) }
 
     // Application state
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Main) }
@@ -25,10 +28,13 @@ fun App() {
     var currentSlideIndex by remember { mutableStateOf(0) }
 
     ProclaimerTheme(darkTheme = true) {
+        PresentationWindows(stateHolder = stateHolder, windowStateHolder = windowStateHolder)
+
         when (screen) {
             is AppScreen.Main -> {
                 MainScreen(
                     stateHolder = stateHolder,
+                    windowStateHolder = windowStateHolder,
                     onStartPresentation = {
                         slides = stateHolder.slides.value
                         currentSlideIndex = stateHolder.currentSlideIndex.value

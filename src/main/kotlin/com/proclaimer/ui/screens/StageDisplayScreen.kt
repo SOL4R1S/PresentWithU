@@ -1,6 +1,7 @@
 package com.proclaimer.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.proclaimer.model.Slide
 import com.proclaimer.ui.components.OutputDisplay
+import com.proclaimer.model.toLibraryItem
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.*
 
 @Composable
 fun StageDisplayScreen(
@@ -23,16 +28,36 @@ fun StageDisplayScreen(
     onClose: () -> Unit
 ) {
     val currentSlide = slides.getOrNull(currentIndex)
+    val nextSlide = slides.getOrNull(currentIndex + 1)
+    var showNotes by remember { mutableStateOf(true) }
+
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFF0D0D1A)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { keyEvent ->
+                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.N) {
+                        showNotes = !showNotes
+                        true
+                    } else false
+                }
+        ) {
             // Main presentation area
             OutputDisplay(
-                slide = currentSlide,
-                isStageDisplay = true
+                item = currentSlide?.toLibraryItem(),
+                nextItem = nextSlide?.toLibraryItem(),
+                isStageDisplay = true,
+                showNotes = showNotes
             )
 
             // Top bar with info
@@ -49,16 +74,29 @@ fun StageDisplayScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Close button
-                    TextButton(onClick = onClose) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Close", color = Color.White.copy(alpha = 0.7f))
+                    // Close button & Notes toggle button
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TextButton(onClick = onClose) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Close", color = Color.White.copy(alpha = 0.7f))
+                        }
+
+                        TextButton(onClick = { showNotes = !showNotes }) {
+                            Icon(
+                                if (showNotes) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = "Toggle Notes",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Notes [N]", color = Color.White.copy(alpha = 0.7f))
+                        }
                     }
 
                     // Slide counter
@@ -83,7 +121,6 @@ fun StageDisplayScreen(
             }
 
             // Bottom: upcoming slide preview
-            val nextSlide = slides.getOrNull(currentIndex + 1)
             if (nextSlide != null) {
                 Surface(
                     modifier = Modifier

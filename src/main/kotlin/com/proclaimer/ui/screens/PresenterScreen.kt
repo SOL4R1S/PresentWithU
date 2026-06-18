@@ -1,8 +1,12 @@
 package com.proclaimer.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -12,8 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.proclaimer.model.Slide
 import com.proclaimer.ui.components.OutputDisplay
+import com.proclaimer.model.toLibraryItem
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,16 +34,57 @@ fun PresenterScreen(
 ) {
     var currentIndex by remember { mutableStateOf(initialIndex) }
     val currentSlide = slides.getOrNull(currentIndex)
+    var numberInput by remember { mutableStateOf("") }
 
-    // Keyboard shortcuts (handled via buttons for desktop)
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown) {
+                    when (keyEvent.key) {
+                        Key.DirectionRight, Key.PageDown -> {
+                            if (currentIndex < slides.size - 1) currentIndex++
+                            true
+                        }
+                        Key.DirectionLeft, Key.PageUp -> {
+                            if (currentIndex > 0) currentIndex--
+                            true
+                        }
+                        Key.NumPad0, Key.Zero -> { numberInput += "0"; true }
+                        Key.NumPad1, Key.One -> { numberInput += "1"; true }
+                        Key.NumPad2, Key.Two -> { numberInput += "2"; true }
+                        Key.NumPad3, Key.Three -> { numberInput += "3"; true }
+                        Key.NumPad4, Key.Four -> { numberInput += "4"; true }
+                        Key.NumPad5, Key.Five -> { numberInput += "5"; true }
+                        Key.NumPad6, Key.Six -> { numberInput += "6"; true }
+                        Key.NumPad7, Key.Seven -> { numberInput += "7"; true }
+                        Key.NumPad8, Key.Eight -> { numberInput += "8"; true }
+                        Key.NumPad9, Key.Nine -> { numberInput += "9"; true }
+                        Key.Enter, Key.NumPadEnter -> {
+                            val targetIndex = numberInput.toIntOrNull()?.minus(1)
+                            if (targetIndex != null && targetIndex in slides.indices) {
+                                currentIndex = targetIndex
+                            }
+                            numberInput = ""
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            },
         color = Color(0xFF0A0A14)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             // Left: Audience display (large)
             OutputDisplay(
-                slide = currentSlide,
+                item = currentSlide?.toLibraryItem(),
                 modifier = Modifier.weight(1.2f)
             )
 
@@ -57,7 +107,7 @@ fun PresenterScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Presenter View",
+                            "Presenter View ${if (numberInput.isNotEmpty()) "[$numberInput]" else ""}",
                             style = MaterialTheme.typography.titleLarge,
                             color = Color.White
                         )
@@ -113,7 +163,6 @@ fun PresenterScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        // Previous
                         Button(
                             onClick = { if (currentIndex > 0) currentIndex-- },
                             enabled = currentIndex > 0,
@@ -130,7 +179,6 @@ fun PresenterScreen(
 
                         Spacer(Modifier.width(8.dp))
 
-                        // Counter
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
@@ -146,7 +194,6 @@ fun PresenterScreen(
 
                         Spacer(Modifier.width(8.dp))
 
-                        // Next
                         Button(
                             onClick = { if (currentIndex < slides.size - 1) currentIndex++ },
                             enabled = currentIndex < slides.size - 1,
@@ -164,7 +211,6 @@ fun PresenterScreen(
 
                     Spacer(Modifier.height(12.dp))
 
-                    // Stage Display button
                     OutlinedButton(
                         onClick = { onOpenStageDisplay(slides, currentIndex) },
                         modifier = Modifier.fillMaxWidth(),
@@ -178,23 +224,36 @@ fun PresenterScreen(
                     Spacer(Modifier.height(16.dp))
 
                     // Quick nav — slide thumbnails
-                    Text(
-                        "Slides",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Slides",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "[←/→] [Num+Enter]",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.4f)
+                        )
+                    }
 
                     Spacer(Modifier.height(8.dp))
 
                     // Scrollable thumbnail list
-                    Column(
+                    LazyColumn(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        slides.forEachIndexed { index, slide ->
+                        itemsIndexed(slides) { index, slide ->
                             val isCurrentSlide = index == currentIndex
                             Surface(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { currentIndex = index },
                                 shape = RoundedCornerShape(6.dp),
                                 color = if (isCurrentSlide) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                                         else Color(0xFF1A1A2E).copy(alpha = 0.5f)

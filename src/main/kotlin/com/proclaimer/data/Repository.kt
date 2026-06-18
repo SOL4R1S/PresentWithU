@@ -31,6 +31,7 @@ class SongRepository(private val dataDir: File) {
     private val presentationsFile: File get() = File(dataDir, "presentations.json")
     private val bibleVersesFile: File get() = File(dataDir, "bible_verses.json")
     private val libraryFile: File get() = File(dataDir, "library.json")
+    private val libraryFoldersFile: File get() = File(dataDir, "library_folders.json")
     private val customLibraryFile: File get() = File(dataDir, "custom_library.json")
     private val playlistsFile: File get() = File(dataDir, "playlists.json")
 
@@ -41,8 +42,14 @@ class SongRepository(private val dataDir: File) {
             initializeFile(presentationsFile, emptyList<Presentation>())
             initializeFile(bibleVersesFile, emptyList<BibleVerse>())
             initializeFile(libraryFile, emptyList<LibraryItem>())
+            initializeFile(libraryFoldersFile, emptyList<LibraryFolder>())
             initializeFile(customLibraryFile, emptyList<CustomLibraryItem>())
             initializeFile(playlistsFile, emptyList<Playlist>())
+            
+            // Trigger auto-migration if legacy songs.json exists
+            if (MigrationHelper.checkMigrationNeeded(dataDir)) {
+                MigrationHelper.migrate(dataDir)
+            }
         } catch (e: Exception) {
             // Suppress initial directory/file creation errors
         }
@@ -365,5 +372,35 @@ class SongRepository(private val dataDir: File) {
         val playlists = (current as RepositoryResult.Success).data.toMutableList()
         playlists.removeAll { it.id == id }
         return writeJsonFile(playlistsFile, playlists)
+    }
+
+    // --- Library Folders ---
+
+    suspend fun getAllLibraryFolders(): RepositoryResult<List<LibraryFolder>> =
+        readJsonFile<LibraryFolder>(libraryFoldersFile)
+
+    suspend fun saveLibraryFolder(folder: LibraryFolder): RepositoryResult<LibraryFolder> {
+        val current = getAllLibraryFolders()
+        if (current is RepositoryResult.Error) return current
+        val folders = (current as RepositoryResult.Success).data.toMutableList()
+        val idx = folders.indexOfFirst { it.id == folder.id }
+        val updated = folder
+        if (idx >= 0) {
+            folders[idx] = updated
+        } else {
+            folders.add(updated)
+        }
+        return when (val writeResult = writeJsonFile(libraryFoldersFile, folders)) {
+            is RepositoryResult.Success -> RepositoryResult.Success(updated)
+            is RepositoryResult.Error -> writeResult
+        }
+    }
+
+    suspend fun deleteLibraryFolder(id: String): RepositoryResult<Unit> {
+        val current = getAllLibraryFolders()
+        if (current is RepositoryResult.Error) return current
+        val folders = (current as RepositoryResult.Success).data.toMutableList()
+        folders.removeAll { it.id == id }
+        return writeJsonFile(libraryFoldersFile, folders)
     }
 }

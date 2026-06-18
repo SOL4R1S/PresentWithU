@@ -39,6 +39,9 @@ class MainStateHolder(
     private val _playlists = MutableStateFlow(listOf<Playlist>())
     val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
 
+    private val _libraryFolders = MutableStateFlow(listOf<LibraryFolder>())
+    val libraryFolders: StateFlow<List<LibraryFolder>> = _libraryFolders.asStateFlow()
+
     private val _setlist = MutableStateFlow(listOf<LibraryItem>())
     val setlist: StateFlow<List<LibraryItem>> = _setlist.asStateFlow()
 
@@ -84,6 +87,7 @@ class MainStateHolder(
             repository.getAllBibleVerses().onSuccess { _bibleVerses.value = it }
             repository.getAllLibraryItems().onSuccess { _libraryItems.value = it }
             repository.getAllPlaylists().onSuccess { _playlists.value = it }
+            repository.getAllLibraryFolders().onSuccess { _libraryFolders.value = it }
         }
     }
 
@@ -408,6 +412,61 @@ class MainStateHolder(
         }
     }
 
+    fun loadLibraryItemToSlides(item: LibraryItem) {
+        val tempSlides = mutableListOf<Slide>()
+        when (item.type) {
+            LibraryItemType.SONG -> {
+                val chunks = item.content.split("\n\n")
+                val songSlides = chunks.flatMap { chunk ->
+                    chunk.lines().filter { it.isNotBlank() }.chunked(2).map { lines ->
+                        Slide(
+                            type = SlideType.LYRIC,
+                            content = lines.joinToString("\n"),
+                            note = item.label
+                        )
+                    }
+                }
+                tempSlides.addAll(songSlides)
+            }
+            LibraryItemType.SERMON,
+            LibraryItemType.SERVICE_ORDER,
+            LibraryItemType.ANNOUNCEMENT -> {
+                if (item.content.isNotBlank()) {
+                    tempSlides.add(
+                        Slide(
+                            type = SlideType.ANNOUNCEMENT,
+                            content = item.content,
+                            note = item.label
+                        )
+                    )
+                }
+            }
+            LibraryItemType.VIDEO,
+            LibraryItemType.IMAGE -> {
+                tempSlides.add(
+                    Slide(
+                        type = SlideType.IMAGE,
+                        content = item.label,
+                        note = item.metadata,
+                        backgroundImagePath = item.content
+                    )
+                )
+            }
+            LibraryItemType.TITLE,
+            LibraryItemType.BLANK -> {
+                tempSlides.add(
+                    Slide(
+                        type = if (item.type == LibraryItemType.TITLE) SlideType.TITLE else SlideType.BLANK,
+                        content = item.content,
+                        note = item.label
+                    )
+                )
+            }
+        }
+        _slides.value = tempSlides
+        _currentSlideIndex.value = 0
+    }
+
     @Deprecated("Use saveLibraryItem instead")
     fun saveCustomLibraryItem(item: CustomLibraryItem) {
         scope.launch {
@@ -498,6 +557,18 @@ class MainStateHolder(
     }
 
     fun getCurrentSlides(): List<Slide> = _slides.value
-
+ 
     fun getCurrentSlideIndex(): Int = _currentSlideIndex.value
+
+    fun saveLibraryFolder(folder: LibraryFolder) {
+        scope.launch {
+            repository.saveLibraryFolder(folder).onSuccess { loadData() }
+        }
+    }
+
+    fun deleteLibraryFolder(id: String) {
+        scope.launch {
+            repository.deleteLibraryFolder(id).onSuccess { loadData() }
+        }
+    }
 }

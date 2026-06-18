@@ -13,11 +13,13 @@ import androidx.compose.ui.unit.dp
 import com.proclaimer.model.*
 import com.proclaimer.ui.components.*
 import com.proclaimer.ui.state.MainStateHolder
+import com.proclaimer.ui.state.WindowStateHolder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     stateHolder: MainStateHolder,
+    windowStateHolder: WindowStateHolder,
     onStartPresentation: () -> Unit,
     onOpenStageDisplay: () -> Unit
 ) {
@@ -40,48 +42,55 @@ fun MainScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Row(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            // Left panel adapts to selected tab
-            when (selectedTab) {
-                0 -> SlideListPanel(
-                    slides = slides,
-                    currentIndex = currentSlideIndex,
-                    onSelect = { stateHolder.selectSlide(it) },
-                    onAdd = { stateHolder.addSlide() },
-                    onDelete = { stateHolder.deleteSlide(it) },
-                    onMoveUp = { stateHolder.moveSlideUp(it) },
-                    onMoveDown = { stateHolder.moveSlideDown(it) },
-                    modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
+            if (selectedTab == 4) {
+                SettingsScreen(
+                    windowStateHolder = windowStateHolder,
+                    modifier = Modifier.weight(1f)
                 )
-                1 -> SongLibraryPanel(
-                    songs = songs,
-                    onSelectSong = { stateHolder.addSongToSlides(it) },
-                    onDeleteSong = { stateHolder.deleteSong(it) },
-                    onNewSong = { stateHolder.showSongEditor() },
-                    modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
-                )
-                2 -> LibraryPanel(
-                    items = libraryItems,
-                    onAddToSlides = { stateHolder.addLibraryItemToSlides(it) },
-                    onDelete = { stateHolder.deleteLibraryItem(it) },
-                    onSave = { stateHolder.saveLibraryItem(it) },
-                    modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
-                )
-                3 -> PlaylistPanel(
-                    playlists = playlists,
-                    onApply = { stateHolder.applyPlaylist(it) },
-                    onDelete = { stateHolder.deletePlaylist(it) },
-                    modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
+            } else {
+                // Left panel adapts to selected tab
+                when (selectedTab) {
+                    0 -> SlideListPanel(
+                        slides = slides,
+                        currentIndex = currentSlideIndex,
+                        onSelect = { stateHolder.selectSlide(it) },
+                        onAdd = { stateHolder.addSlide() },
+                        onDelete = { stateHolder.deleteSlide(it) },
+                        onMoveUp = { stateHolder.moveSlideUp(it) },
+                        onMoveDown = { stateHolder.moveSlideDown(it) },
+                        modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
+                    )
+                    1 -> SongLibraryPanel(
+                        songs = songs,
+                        onSelectSong = { stateHolder.addSongToSlides(it) },
+                        onDeleteSong = { stateHolder.deleteSong(it) },
+                        onNewSong = { stateHolder.showSongEditor() },
+                        modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
+                    )
+                    2 -> LibraryPanel(
+                        items = libraryItems,
+                        onAddToSlides = { stateHolder.addLibraryItemToSlides(it) },
+                        onDelete = { stateHolder.deleteLibraryItem(it) },
+                        onSave = { stateHolder.saveLibraryItem(it) },
+                        modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
+                    )
+                    3 -> PlaylistPanel(
+                        playlists = playlists,
+                        onApply = { stateHolder.applyPlaylist(it) },
+                        onDelete = { stateHolder.deletePlaylist(it) },
+                        modifier = Modifier.fillMaxWidth(0.22f).widthIn(min = 180.dp, max = 320.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                // Center — Slide Editor
+                SlideEditor(
+                    slide = slides.getOrNull(currentSlideIndex),
+                    onUpdate = { updated -> stateHolder.updateSlide(updated, currentSlideIndex) },
+                    modifier = Modifier.weight(1f)
                 )
             }
-
-            Spacer(Modifier.width(12.dp))
-
-            // Center — Slide Editor
-            SlideEditor(
-                slide = slides.getOrNull(currentSlideIndex),
-                onUpdate = { updated -> stateHolder.updateSlide(updated, currentSlideIndex) },
-                modifier = Modifier.weight(1f)
-            )
 
             Spacer(Modifier.width(12.dp))
 
@@ -128,6 +137,11 @@ fun MainScreen(
                             onClick = { stateHolder.selectTab(3) },
                             text = { Text("Lists", style = MaterialTheme.typography.labelSmall) }
                         )
+                        Tab(
+                            selected = selectedTab == 4,
+                            onClick = { stateHolder.selectTab(4) },
+                            text = { Text("Settings", style = MaterialTheme.typography.labelSmall) }
+                        )
                     }
 
                     Spacer(Modifier.height(6.dp))
@@ -157,7 +171,64 @@ fun MainScreen(
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Stage Display")
+                        Text("Stage Display (Single)")
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Text("Multi-Window Output", style = MaterialTheme.typography.titleSmall)
+
+                    // Control Window Toggle
+                    OutlinedButton(
+                        onClick = { windowStateHolder.isControlOpen = !windowStateHolder.isControlOpen },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (windowStateHolder.isControlOpen) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (windowStateHolder.isControlOpen) Icons.Default.PlayArrow else Icons.Default.Visibility,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (windowStateHolder.isControlOpen) "Close Controller" else "Open Controller")
+                    }
+
+                    // Audience Display Toggle
+                    OutlinedButton(
+                        onClick = { windowStateHolder.isAudienceOpen = !windowStateHolder.isAudienceOpen },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (windowStateHolder.isAudienceOpen) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (windowStateHolder.isAudienceOpen) Icons.Default.PlayArrow else Icons.Default.Visibility,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (windowStateHolder.isAudienceOpen) "Close Audience" else "Open Audience")
+                    }
+
+                    // Stage Display Toggle
+                    OutlinedButton(
+                        onClick = { windowStateHolder.isStageOpen = !windowStateHolder.isStageOpen },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (windowStateHolder.isStageOpen) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (windowStateHolder.isStageOpen) Icons.Default.PlayArrow else Icons.Default.Visibility,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (windowStateHolder.isStageOpen) "Close Stage Window" else "Open Stage Window")
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))

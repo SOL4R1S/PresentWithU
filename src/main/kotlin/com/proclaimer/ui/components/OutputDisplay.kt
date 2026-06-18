@@ -9,7 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.proclaimer.model.Slide
 import com.proclaimer.model.SlideType
+import com.proclaimer.model.toLibraryItem
 import androidx.compose.foundation.Image
 
 /**
@@ -88,6 +89,16 @@ fun OutputDisplay(
     nextItem: LibraryItem? = null
 ) {
     val bgColor = parseColor(item?.backgroundColor) ?: Color.Black
+    var backgroundImage by remember(item?.mediaPath) { mutableStateOf<ImageBitmap?>(null) }
+
+    LaunchedEffect(item?.mediaPath) {
+        val path = item?.mediaPath
+        if (!path.isNullOrBlank()) {
+            backgroundImage = com.proclaimer.media.MediaLoader.loadImage(path)
+        } else {
+            backgroundImage = null
+        }
+    }
 
     Box(
         modifier = modifier
@@ -100,12 +111,10 @@ fun OutputDisplay(
             return@Box
         }
 
-        val media = item.mediaPath.takeIf { it.isNotBlank() }?.let { resolveMedia(it) }
-
         // Background layer
-        if (media is OutputMedia.Image) {
+        backgroundImage?.let { bitmap ->
             Image(
-                bitmap = media.bitmap,
+                bitmap = bitmap,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -149,15 +158,22 @@ private fun AudienceDisplayLayout(
     textPosition: OutputPosition,
     mediaCrop: OutputCrop
 ) {
+    var contentImage by remember(item.mediaPath) { mutableStateOf<ImageBitmap?>(null) }
+
+    LaunchedEffect(item.mediaPath) {
+        if (item.type == LibraryItemType.IMAGE && item.mediaPath.isNotBlank()) {
+            contentImage = com.proclaimer.media.MediaLoader.loadImage(item.mediaPath)
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (item.type) {
             LibraryItemType.BLANK -> { /* intentionally empty */ }
 
             LibraryItemType.IMAGE -> {
-                val media = item.mediaPath.takeIf { it.isNotBlank() }?.let { resolveMedia(it) }
-                if (media is OutputMedia.Image) {
+                contentImage?.let { bitmap ->
                     Image(
-                        bitmap = media.bitmap,
+                        bitmap = bitmap,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -166,8 +182,10 @@ private fun AudienceDisplayLayout(
             }
 
             LibraryItemType.VIDEO -> {
-                // Video rendering requires platform-specific players; show placeholder with path.
-                VideoPlaceholder(item.mediaPath)
+                com.proclaimer.media.VideoPlayer(
+                    path = item.mediaPath,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             else -> {
@@ -193,8 +211,7 @@ private fun AudienceDisplayLayout(
                                 text = line,
                                 fontSize = textStyle.fontSize,
                                 fontFamily = textStyle.fontFamily,
-                                fontWeight = if (line.startsWith("(") || line.startsWith("["))
-                                    FontWeight.Light else textStyle.fontWeight,
+                                fontWeight = textStyle.fontWeight,
                                 color = textStyle.color,
                                 textAlign = textStyle.alignment,
                                 lineHeight = textStyle.lineHeight,
@@ -346,19 +363,3 @@ fun OutputDisplay(
     )
 }
 
-private fun Slide.toLibraryItem(): LibraryItem {
-    return LibraryItem(
-        id = id,
-        type = when (type) {
-            SlideType.LYRIC,
-            SlideType.TITLE,
-            SlideType.BLANK -> LibraryItemType.SONG
-            SlideType.SCRIPTURE -> LibraryItemType.SERMON
-            SlideType.ANNOUNCEMENT -> LibraryItemType.ANNOUNCEMENT
-            SlideType.IMAGE -> LibraryItemType.IMAGE
-        },
-        label = note,
-        content = content,
-        category = type.name
-    )
-}
