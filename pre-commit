@@ -1,0 +1,21 @@
+#!/bin/sh
+# Proclaimer pre-commit hook
+# Runs the test suite before allowing a commit.
+
+echo "[pre-commit] Running Proclaimer tests..."
+
+if [ -f ./gradlew ]; then
+    ./gradlew test --no-daemon
+else
+    echo "[pre-commit] No ./gradlew found; skipping build check."
+    exit 0
+fi
+
+RESULT=$?
+if [ $RESULT -ne 0 ]; then
+    echo "[pre-commit] Tests failed. Commit aborted."
+    exit 1
+fi
+
+echo "[pre-commit] Tests passed."
+exit 0

@@ -1,0 +1,21 @@
+#!/bin/sh
+# Proclaimer pre-push hook
+# Runs the full test suite before allowing a push.
+
+echo "[pre-push] Running Proclaimer tests..."
+
+if [ -f ./gradlew ]; then
+    ./gradlew test --no-daemon
+else
+    echo "[pre-push] No ./gradlew found; skipping build check."
+    exit 0
+fi
+
+RESULT=$?
+if [ $RESULT -ne 0 ]; then
+    echo "[pre-push] Tests failed. Push aborted."
+    exit 1
+fi
+
+echo "[pre-push] Tests passed."
+exit 0

@@ -94,6 +94,20 @@ proclaimer/
 - **Storage:** Local JSON files via kotlinx-serialization
 - **Targets:** macOS (.dmg), Windows (.msi), Linux (.deb)
 
+## Git Hooks
+
+This repository uses local git hooks to ensure tests are run before commits and pushes.
+
+- `pre-commit`: Runs `./gradlew test --no-daemon` before each commit.
+- `pre-push`: Runs `./gradlew test --no-daemon` before each push.
+
+To set up the git hooks in your workspace:
+```bash
+cp pre-commit pre-push .git/hooks/
+chmod +x .git/hooks/pre-commit
+chmod +x .git/hooks/pre-push
+```
+
 ## License
 
 MIT
