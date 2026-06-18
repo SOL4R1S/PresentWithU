@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
 }
 
-group = "com.proclaimer"
+group = "com.presentwithu"
 version = "1.0.0"
 
 repositories {
@@ -41,14 +41,14 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "com.proclaimer.MainKt"
+        mainClass = "com.presentwithu.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "Proclaimer"
+            packageName = "PresentWithU"
             packageVersion = "1.0.0"
             description = "Church Presentation Software"
-            vendor = "Proclaimer"
+            vendor = "PresentWithU"
 
             linux {
                 iconFile.set(project.file("src/main/resources/icon.png"))
@@ -56,13 +56,13 @@ compose.desktop {
 
             windows {
                 iconFile.set(project.file("src/main/resources/icon.ico"))
-                menuGroup = "Proclaimer"
+                menuGroup = "PresentWithU"
                 upgradeUuid = "e3a2c1b0-4d5f-6a7b-8c9d-0e1f2a3b4c5d"
             }
 
             macOS {
                 iconFile.set(project.file("src/main/resources/icon.icns"))
-                bundleID = "com.proclaimer.app"
+                bundleID = "com.presentwithu.app"
             }
         }
     }

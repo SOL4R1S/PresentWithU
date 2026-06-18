@@ -7,4 +7,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "proclaimer"
+rootProject.name = "presentwithu"

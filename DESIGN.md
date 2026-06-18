@@ -1,4 +1,4 @@
-# Proclaimer App Design & Architecture Audit
+# PresentWithU App Design & Architecture Audit
 
 ## 1. Gradle Version Audit
 
@@ -34,7 +34,7 @@ Here is a review of the current major dependencies and their latest available ve
 *   **Animations:** There are no apparent slide transition animations (like crossfades using `AnimatedContent`). This makes switching between slides feel abrupt.
 
 ### Typography
-*   The `ProclaimerTypography` in `Theme.kt` is comprehensive but relies on system default fonts. For a presentation app where legibility and aesthetic are paramount, a modern, clean font like *Inter*, *Roboto*, or *Outfit* should be loaded and applied to the `FontFamily`.
+*   The `PresentWithUTypography` in `Theme.kt` is comprehensive but relies on system default fonts. For a presentation app where legibility and aesthetic are paramount, a modern, clean font like *Inter*, *Roboto*, or *Outfit* should be loaded and applied to the `FontFamily`.
 
 ### Responsiveness / Window Sizing
 *   The `Main.kt` sets a hardcoded starting window size of `1400x900`. 

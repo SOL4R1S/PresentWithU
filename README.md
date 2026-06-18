@@ -1,4 +1,4 @@
-# Proclaimer 🎤
+# PresentWithU 🎤
 
 **Church Presentation Software** — Kotlin + Compose Multiplatform Desktop
 
@@ -62,11 +62,11 @@ brew install openjdk@17
 ## Project Structure
 
 ```
-proclaimer/
+presentwithu/
 ├── build.gradle.kts          # Compose Desktop build config
 ├── settings.gradle.kts
 ├── src/main/kotlin/
-│   └── com/proclaimer/
+│   └── com/presentwithu/
 │       ├── Main.kt           # Entry point
 │       ├── model/Models.kt   # Data models (Song, Slide, Presentation)
 │       ├── data/Repository.kt # JSON file storage + Bible data
