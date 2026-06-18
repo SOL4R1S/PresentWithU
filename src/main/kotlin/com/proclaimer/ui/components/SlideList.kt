@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -117,7 +118,7 @@ private fun SlideListItem(
 
     val typeIcon = when (slide.type) {
         SlideType.LYRIC -> Icons.Default.MusicNote
-        SlideType.SCRIPTURE -> Icons.Default.MenuBook
+        SlideType.SCRIPTURE -> Icons.AutoMirrored.Filled.MenuBook
         SlideType.ANNOUNCEMENT -> Icons.Default.Campaign
         SlideType.TITLE -> Icons.Default.Title
         SlideType.BLANK -> Icons.Default.Brightness1

@@ -1,8 +1,6 @@
 package com.proclaimer.ui
 
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import com.proclaimer.data.SongRepository
 import com.proclaimer.model.Slide
@@ -11,11 +9,15 @@ import com.proclaimer.ui.screens.PresenterScreen
 import com.proclaimer.ui.screens.StageDisplayScreen
 import com.proclaimer.ui.theme.ProclaimerTheme
 import java.io.File
+import androidx.compose.runtime.rememberCoroutineScope
+import com.proclaimer.ui.state.MainStateHolder
 
 @Composable
 fun App() {
     val dataDir = File(System.getProperty("user.home"), ".proclaimer")
     val repository = remember { SongRepository(dataDir) }
+    val scope = rememberCoroutineScope()
+    val stateHolder = remember { MainStateHolder(repository, scope) }
 
     // Application state
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Main) }
@@ -26,15 +28,15 @@ fun App() {
         when (screen) {
             is AppScreen.Main -> {
                 MainScreen(
-                    repository = repository,
-                    onStartPresentation = { s ->
-                        slides = s
-                        currentSlideIndex = 0
+                    stateHolder = stateHolder,
+                    onStartPresentation = {
+                        slides = stateHolder.slides.value
+                        currentSlideIndex = stateHolder.currentSlideIndex.value
                         screen = AppScreen.Presenter
                     },
-                    onOpenStageDisplay = { s, idx ->
-                        slides = s
-                        currentSlideIndex = idx
+                    onOpenStageDisplay = {
+                        slides = stateHolder.slides.value
+                        currentSlideIndex = stateHolder.currentSlideIndex.value
                         screen = AppScreen.StageDisplay
                     }
                 )

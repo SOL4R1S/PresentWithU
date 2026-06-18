@@ -2,11 +2,22 @@ package com.proclaimer.ui.theme
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+
+val GradientPrimary: List<Color> = listOf(Color(0xFF6C63FF), Color(0xFF3D35A0))
+val GradientSecondary: List<Color> = listOf(Color(0xFF03DAC6), Color(0xFF005048))
+val GradientWarm: List<Color> = listOf(Color(0xFFFFB74D), Color(0xFF6C63FF))
 
 // --- Proclaimer Dark Theme ---
 // Inspired by church AV environments: low-light friendly, high contrast text
@@ -159,6 +170,35 @@ val ProclaimerTypography = Typography(
         letterSpacing = 0.5.sp
     )
 )
+
+@Composable
+fun GradientBox(
+    gradient: List<Color>,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier.background(
+            brush = Brush.verticalGradient(gradient)
+        ),
+        contentAlignment = Alignment.Center,
+        content = content
+    )
+}
+
+@Composable
+fun GradientSurface(
+    gradient: List<Color> = GradientPrimary,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+    ) {
+        GradientBox(gradient = gradient, content = content)
+    }
+}
 
 @Composable
 fun ProclaimerTheme(

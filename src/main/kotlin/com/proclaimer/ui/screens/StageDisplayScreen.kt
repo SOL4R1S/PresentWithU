@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.proclaimer.model.Slide
-import com.proclaimer.ui.components.PresentationDisplay
+import com.proclaimer.ui.components.OutputDisplay
 
 @Composable
 fun StageDisplayScreen(
@@ -30,7 +30,7 @@ fun StageDisplayScreen(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Main presentation area
-            PresentationDisplay(
+            OutputDisplay(
                 slide = currentSlide,
                 isStageDisplay = true
             )

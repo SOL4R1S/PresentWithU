@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -91,7 +92,7 @@ fun SlideEditor(
                             Icon(
                                 when (type) {
                                     SlideType.LYRIC -> Icons.Default.MusicNote
-                                    SlideType.SCRIPTURE -> Icons.Default.MenuBook
+                                    SlideType.SCRIPTURE -> Icons.AutoMirrored.Filled.MenuBook
                                     SlideType.ANNOUNCEMENT -> Icons.Default.Campaign
                                     SlideType.TITLE -> Icons.Default.Title
                                     SlideType.BLANK -> Icons.Default.Brightness1
@@ -168,7 +169,7 @@ fun SlideEditor(
                 presets.take(8).forEach { (colorHex, label) ->
                     val isSelected = bgColor.equals(colorHex, ignoreCase = true)
                     val color = try {
-                        Color(android.graphics.Color.parseColor(colorHex))
+                        Color(colorHex.replace("#", "").toLong(16) or 0xFF000000)
                     } catch (e: Exception) {
                         Color(0xFF1a1a2e)
                     }
@@ -210,9 +211,9 @@ fun SlideEditor(
 @Composable
 fun SlidePreview(slide: Slide, modifier: Modifier = Modifier) {
     val bgColor = try {
-        Color(android.graphics.Color.parseColor(slide.backgroundColor))
+        Color(slide.backgroundColor.replace("#", "").toLong(16) or 0xFF000000)
     } catch (e: Exception) {
-        Color(0xFF1a1a2e)
+        MaterialTheme.colorScheme.background
     }
 
     Box(
@@ -231,7 +232,7 @@ fun SlidePreview(slide: Slide, modifier: Modifier = Modifier) {
                 Text(
                     slide.content,
                     style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
@@ -240,7 +241,7 @@ fun SlidePreview(slide: Slide, modifier: Modifier = Modifier) {
                     Text(
                         line,
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         fontWeight = FontWeight.Normal,
                         modifier = Modifier.padding(vertical = 2.dp)
@@ -255,12 +256,12 @@ fun SlidePreview(slide: Slide, modifier: Modifier = Modifier) {
                 .align(Alignment.TopStart)
                 .padding(8.dp),
             shape = RoundedCornerShape(4.dp),
-            color = Color.Black.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
         ) {
             Text(
                 slide.type.name,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
             )
         }

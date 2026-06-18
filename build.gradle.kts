@@ -2,9 +2,10 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "1.9.22"
-    id("org.jetbrains.compose") version "1.6.0"
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("jvm") version "2.4.0"
+    id("org.jetbrains.compose") version "1.12.0-alpha01"
+    kotlin("plugin.serialization") version "2.4.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
 }
 
 group = "com.proclaimer"
@@ -18,19 +19,24 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation(compose.material3)
-    implementation(compose.materialIconsExtended)
+    implementation("org.jetbrains.compose.material3:material3-desktop:1.7.3")
+    implementation("org.jetbrains.compose.material:material-icons-extended-desktop:1.7.3")
 
     // Serialization for JSON storage
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation(kotlin("test"))
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(25)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
+    }
 }
 
 compose.desktop {

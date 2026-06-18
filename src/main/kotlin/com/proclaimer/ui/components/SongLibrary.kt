@@ -301,7 +301,8 @@ fun SongEditorDialog(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    itemsIndexed(verses) { index, verse ->
+                    items(verses) { verse ->
+                        val index = verses.indexOf(verse)
                         VerseEditor(
                             verse = verse,
                             onChange = { updated ->
@@ -350,6 +351,7 @@ fun SongEditorDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VerseEditor(
     verse: Verse,
@@ -377,7 +379,7 @@ private fun VerseEditor(
                     OutlinedTextField(
                         value = label,
                         onValueChange = { label = it; onChange(verse.copy(label = it)) },
-                        modifier = Modifier.width(100.dp).menuAnchor(),
+                        modifier = Modifier.width(100.dp).menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true),
                         singleLine = true,
                         textStyle = MaterialTheme.typography.labelMedium
                     )

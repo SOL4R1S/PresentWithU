@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.proclaimer.model.Slide
-import com.proclaimer.ui.components.PresentationDisplay
+import com.proclaimer.ui.components.OutputDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +33,7 @@ fun PresenterScreen(
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             // Left: Audience display (large)
-            PresentationDisplay(
+            OutputDisplay(
                 slide = currentSlide,
                 modifier = Modifier.weight(1.2f)
             )
