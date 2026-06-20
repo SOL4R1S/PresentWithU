@@ -82,8 +82,8 @@ fun OutputDisplay(
     modifier: Modifier = Modifier,
     isStageDisplay: Boolean = false,
     fadeDurationMs: Int = 0,
-    textStyle: OutputTextStyle = OutputTextStyle(),
-    textPosition: OutputPosition = OutputPosition(),
+    textStyle: OutputTextStyle? = null,
+    textPosition: OutputPosition? = null,
     mediaCrop: OutputCrop = OutputCrop(),
     showNotes: Boolean = false,
     nextItem: LibraryItem? = null
@@ -99,6 +99,29 @@ fun OutputDisplay(
             backgroundImage = null
         }
     }
+
+    val resolvedTextStyle = textStyle ?: OutputTextStyle(
+        fontSize = (item?.fontSize ?: 48).sp,
+        fontFamily = when (item?.fontFamily) {
+            "Serif" -> FontFamily.Serif
+            "Monospace" -> FontFamily.Monospace
+            else -> FontFamily.SansSerif
+        },
+        alignment = when (item?.alignment) {
+            "Left" -> TextAlign.Left
+            "Right" -> TextAlign.Right
+            else -> TextAlign.Center
+        },
+        lineHeight = ((item?.fontSize ?: 48) * 1.25).sp,
+        color = parseColor(item?.textColor) ?: Color.White
+    )
+
+    val resolvedTextPosition = textPosition ?: OutputPosition(
+        x = item?.positionX ?: 0.05f,
+        y = item?.positionY ?: 0.05f,
+        width = item?.boxWidth ?: 0.9f,
+        height = item?.boxHeight ?: 0.9f
+    )
 
     Box(
         modifier = modifier
@@ -142,8 +165,8 @@ fun OutputDisplay(
             } else {
                 AudienceDisplayLayout(
                     item = currentItem,
-                    textStyle = textStyle,
-                    textPosition = textPosition,
+                    textStyle = resolvedTextStyle,
+                    textPosition = resolvedTextPosition,
                     mediaCrop = mediaCrop
                 )
             }

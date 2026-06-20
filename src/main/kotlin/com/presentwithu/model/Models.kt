@@ -39,7 +39,14 @@ data class Slide(
     val backgroundColor: String = "#1a1a2e",
     val textColor: String = "#FFFFFF",
     val backgroundImagePath: String = "",
-    val order: Int = 0
+    val order: Int = 0,
+    val fontSize: Int = 48,
+    val fontFamily: String = "SansSerif",
+    val alignment: String = "Center",
+    val positionX: Float = 0.05f,
+    val positionY: Float = 0.05f,
+    val boxWidth: Float = 0.9f,
+    val boxHeight: Float = 0.9f
 )
 
 @Serializable
@@ -141,7 +148,14 @@ data class LibraryItem(
     val mediaPath: String = "",
     val order: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val fontSize: Int = 48,
+    val fontFamily: String = "SansSerif",
+    val alignment: String = "Center",
+    val positionX: Float = 0.05f,
+    val positionY: Float = 0.05f,
+    val boxWidth: Float = 0.9f,
+    val boxHeight: Float = 0.9f
 )
 
 fun Slide.toLibraryItem(): LibraryItem = LibraryItem(
@@ -160,7 +174,14 @@ fun Slide.toLibraryItem(): LibraryItem = LibraryItem(
     backgroundColor = backgroundColor,
     textColor = textColor,
     mediaPath = backgroundImagePath,
-    order = order
+    order = order,
+    fontSize = fontSize,
+    fontFamily = fontFamily,
+    alignment = alignment,
+    positionX = positionX,
+    positionY = positionY,
+    boxWidth = boxWidth,
+    boxHeight = boxHeight
 )
 
 @Serializable
